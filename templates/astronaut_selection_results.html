@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}
+<title>Результат отбора</title>
+{% endblock %}
+
+{% block content %}
+    <h1>Результат отбора</h1>
+    <p>Имя: {{ name }}</p>
+    <p>Фамилия: {{ surname }}</p>
+    <p>Пол: {{ gender }}</p>
+    <p>Email: {{ email }}</p>
+    <p>Образование: {{ education }}</p>
+    <p>Профессии: {{ profession }}</p>
+    <p>Мотивация: {{ motivation }}</p>
+    <p>Готовы остаться на марсе: {% if live_on_mars %} Да {% else %} Нет {% endif %}</p>
+{% endblock %}
