@@ -1,59 +1,77 @@
+import os
+import json
+from random import choice
+
+from werkzeug.utils import secure_filename
 from flask import (
     Flask,
     url_for,
     render_template,
-    request
+    request,
+    redirect
 )
 
-# Архив весил больше, поэтому сдаю ссылку на git
+from forms import (
+    LoginForm,
+    ImageForm,
+)
+
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
+app.config['IMAGES'] = 5
 
-@app.route('/')
-def home():
-    return "<h1>Миссия Колонизация Марса</h1>"
 
-@app.route('/index')
-def index():
-    return "<h2>И на Марсе будут яблони цвести!</h2"
+@app.route('/<title>')
+@app.route('/index/<title>')
+def home(title="Mars"):
+    return render_template('base.html',
+                           title=title)
 
-@app.route('/promotion')
-def promotion():
-    lines = ("Человечество вырастает из детства.",
-             "Человечеству мала одна планета.",
-             "Мы сделаем обитаемыми безжизненные пока планеты.",
-             "И начнем с Марса!",
-             "Присоединяйся!"
+
+@app.route('/training/<prof>')
+def prof_training(prof: str):
+    prof = prof.lower()
+    profession = ""
+    image = "ship.jpg"
+    if prof == "врач":
+        profession = "Научные симуляторы"
+        image = "scn_ship.jpg"
+    elif "инжинер" in prof or "строитель" in prof:
+        profession = "Инжинерные тренажёры"
+        image = "ing_ship.jpg"
+    return render_template('training.html',
+                           profession=profession,
+                           image=url_for('static', filename='img/' + image))
+
+
+@app.route('/list_prof/<list_type>')
+def list_prof(list_type):
+    professions = (
+        "инженер-исследователь",
+        "пилот",
+        "экзобиолог",
+        "врач",
+        "инженер по терраформированию",
+        "климатолог",
+        "специалист по радиационной защите",
+        "астрогеолог",
+        "гляциолог",
+        "инженер жизнеобеспечения",
+        "метеоролог",
+        "оператор марсохода",
+        "киберинженер",
+        "штурман",
+        "пилот дронов",
     )
-    return "<h2>" + "<br>".join(lines) + "</h1>"
+    return render_template('list.html',
+                           list_type=list_type,
+                           professions=professions)
 
-@app.route('/image_mars')
-def image_mars():
-    return render_template('mars_image.html',
-        title="Привет, Марс!",
-        path_to_image=url_for('static', filename='img/mars.png')
-    )
 
-@app.route('/promotion_image')
-def promotion_image():
-    return render_template('promotion_image.html',
-        title="Колонизация",
-        path_to_css=url_for('static', filename='css/style.css'),
-        path_to_image=url_for('static', filename='img/mars.png'),
-        lines=("Человечество вырастает из детства.",
-             "Человечеству мала одна планета.",
-             "Мы сделаем обитаемыми безжизненные пока планеты.",
-             "И начнем с Марса!",
-             "Присоединяйся!"
-        )
-    )
-
-@app.route('/astronaut_selection', methods=['POST', 'GET'])
-def astronaut_selection():
-    if  request.method == 'GET':
-        return render_template('astronaut_selection_form.html')
-    elif request.method == 'POST':
-        print(request.form)
-        return render_template('astronaut_selection_results.html',
+@app.route('/answer', methods=['POST', 'GET'])
+@app.route('/auto_answer', methods=['POST', 'GET'])
+def answer():
+    return render_template('astronaut_selection_results.html',
             name=request.form['name'],
             surname=request.form['surname'],
             email=request.form['email'],
@@ -64,45 +82,54 @@ def astronaut_selection():
             profession=request.form['profession']
         )
 
-@app.route('/choice/<planet_name>')
-def choice_planet(planet_name):
-    return render_template('choice_planet.html',
-        planet=planet_name,
-        path_to_css=url_for('static', filename='css/style.css'),
-        lines=(
-            "На ней много необходимых ресурсов",
-            "На ней есть и вода, и атмосфера",
-            "На ней есть небольшое магнитное поле",
-            "Она просто красива"
-        )
-    )
 
-@app.route('/results/<name>/<int:level>/<float:rating>')
-def results(name, level, rating):
-    return render_template('results.html',
-        name=name, level=level, rating=rating
-    )
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        return redirect('index')
+    return render_template('login.html',
+                           form=form)
 
-@app.route('/load_photo', methods=['POST', 'GET'])
-def load_photo():
-    if request.method == 'GET':
-        return render_template('load_pic.html',
-            path_to_css=url_for('static', filename='css/style.css')
-        )
-    elif request.method == 'POST':
-        f = request.files['file']
-        file_name = request.form.get('file', 'form')
-        with open(f'static/{file_name}', 'wb') as save_file:
-            save_file.write(f.read())
-        return render_template('done.html')
 
-@app.route('/carousel')
+@app.route('/distrebtion')
+def distrebution():
+    return render_template('distrebution.html', astronauts=astronauts)
+
+
+@app.route('/table_param/<gender>/<int:age>')
+def table_param(gender: str, age: int):
+     return render_template('table_param.html',
+                            age=age,
+                            gender=1 if gender == "male" else 0,
+                            image=url_for('static', filename=f'img/{gender}_{1 if age > 21 else 2}.jpg'))
+
+
+@app.route('/carousel', methods=['POST', 'GET'])
 def carousel():
-    images = ['c' + str(i) + '.jpg' for i in range(1, 5)]
+    form = ImageForm()
+    if form.validate_on_submit():
+        i = form.image.data
+        filename = secure_filename(i.filename)
+        with open('static/img/carousel/' + filename, 'wb') as f:
+            f.write(i.read())
+        app.config['IMAGES'] += 1
+        return redirect('carousel')
+    images = os.listdir('static/img/carousel/')
     return render_template('carousel.html',
-        first_image=url_for('static', filename='img/' + images[0]),
-        images=[url_for('static', filename='img/' + image) for image in images[1:]]
+        images=[url_for('static', filename='img/carousel/' + image) for image in images],
+        form=form
     )
+
+
+@app.route('/member')
+def member():
+    with open('templates/members.json') as members_file:
+        members = json.load(members_file)
+    member = choice(members)
+    return render_template('member.html',
+                           user=member)
+
 
 if __name__ == "__main__":
     app.run(port=8080)

@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<table class="table w-90 mt-5 mb-5">
+    <thead class="thead-dark">
+    <tr>
+        <th>Color of walls</th>
+        <th>Picture</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    {% if gender %}
+        {% if age > 21 %}
+        <td class="male-old"></td>
+        {% else %}
+        <td class="male-young"></td>
+        {% endif %}
+    {% else %}
+        {% if age > 21 %}
+        <td class="female-old"></td>
+        {% else %}
+        <td class="female-young"></td>
+        {% endif %}
+   {% endif %}
+        <td>
+            <img src="{{ image }}">
+        </td>
+    </tr>
+    </tbody>
+</table>
+{% endblock %}

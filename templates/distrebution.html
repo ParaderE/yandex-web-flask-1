@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<ul>
+{% for user in astronuats %}
+    <li>{{ user }} - Каюта №{{ loop.index }} - {% if loop.first %} Капитан корабля {% endif %}</li>
+{% endfor %}
+</ul>
+{% endblock %}
